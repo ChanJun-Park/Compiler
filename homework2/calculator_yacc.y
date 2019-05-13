@@ -7,14 +7,19 @@
 %{
 #include <stdio.h>
 #define YYSTYPE double
+FILE *yyin;
+FILE *yyout;
 %}
 %token NUMBER
 
 %left '+' '-'
 %left '*' '/'
 %right UMINUS
-%%
-line    :   expr ';''\n'        { printf("%g\n", $1); } 
+%% 
+lines   :   lines expr ';' { fprintf(yyout, "%g\n", $2); } 
+        |   lines '\n'
+        |
+        |   error '\n'          { fprintf(yyout, "Error\n"); yyerror("Reenter previous line"); yyerrok; }
         ; 
 expr    :   expr '+' expr       { $$ = $1 + $3; }
         |   expr '-' expr       { $$ = $1 - $3; }
@@ -26,10 +31,17 @@ expr    :   expr '+' expr       { $$ = $1 + $3; }
         ;
 %%
 #include "lex.yy.c"
-int main() {
-    while(1){
-        yyparse();
+int main(int argc, char* argv[]) 
+{
+    if(argc < 2) {
+        printf("Invalid command : specify a input file after program's name.\n calculator \"input.txt\" \n ");
+        return 1;
     }
-    
+    yyin = fopen(argv[1], "r");
+    yyout = fopen("output.txt", "w");
+    yyparse();
+    fclose(yyin); 
+    fclose(yyout);
+    return 0;
 }
 

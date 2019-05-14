@@ -1490,7 +1490,9 @@ int main(int argc, char* argv[])
     }
     yyin = fopen(argv[1], "r");
     yyout = fopen("output.txt", "w");
+    
     yyparse();
+
     fclose(yyin); 
     fclose(yyout);
     return 0;

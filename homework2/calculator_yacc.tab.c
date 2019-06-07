@@ -1484,13 +1484,14 @@ yyreturn:
 #include "lex.yy.c"
 int main(int argc, char* argv[]) 
 {
+    // 프로그램 실행 방식 설명
     if(argc < 2) {
         printf("Invalid command : specify a input file after program's name.\n calculator \"input.txt\" \n ");
         return 1;
     }
     yyin = fopen(argv[1], "r");
     yyout = fopen("output.txt", "w");
-    
+
     yyparse();
 
     fclose(yyin); 

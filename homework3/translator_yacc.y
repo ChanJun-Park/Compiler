@@ -76,12 +76,14 @@ int add(const char *key, int data)
     return 1;
 }
 
+// addr attribute에 새로운 임시 변수 문자열을 할당해주는 함수
 void newTemp(char* addr) 
 {
     addr[0] = 't';
     sprintf(&addr[1], "%d", cnt++);
 }
 
+// 프로그램 종료시 열려있는 파일들을 처리해주고 종료하는 함수
 void exit_translation(int exit_code)
 {
     fclose(yyin); 

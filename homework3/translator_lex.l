@@ -14,15 +14,17 @@ ws		{delim}+
 letter	[A-Za-z_]
 digit	[0-9]
 id		{letter}({letter}|{digit})*
-number  {digit}+(\.{digit}+)?(E[+-]?{digit}+)?
+integer {digit}+
+float   {digit}+(\.{digit}+)(E[+-]?{digit}+)?
 
 %%
 
 {ws}		{/* no action and no returns */}
-{number}    { sscanf(yytext, "%lf", &floatVal); return NUMBER; }
+{integer}   { sscanf(yytext, "%d", &(yylval.intVal)); return INT_NUMBER; }
+{float}     { sscanf(yytext, "%lf", &(yylval.floatVal)); return FLOAT_NUMBER; }
 "float"/" " { return FLOAT; }
 "int"/" "   { return INT; }
-{id}        { lexeme = string(yytext); return ID; }
+{id}        { strcpy(yylval.lexeme, yytext); return ID; }
 \n|.        { return yytext[0]; }
 
 %%

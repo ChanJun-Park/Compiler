@@ -65,25 +65,91 @@
 #line 7 "translator_yacc.y" /* yacc.c:339  */
 
 #include <stdio.h>
-#include <unordered_map>
-#include <string>
+#include <stdlib.h>
+#include <string.h>
+#include <memory.h>
 #define T_INT 0
 #define T_FLOAT 1
-using namespace std;
 FILE *yyin;
 FILE *yyout;
 int cnt = 0;
-unordered_map<string, int> sym_table;
 
-string newTemp() 
+int yylex();
+
+// hash table
+#define MAX_KEY 64
+#define MAX_TABLE 4096
+ 
+typedef struct
 {
-    string temp = "t";
-    temp += to_string(cnt++);
-    return temp;
+    char key[MAX_KEY + 1];
+    int data;
+}Hash;
+Hash tb[MAX_TABLE];
+ 
+unsigned long hash(const char *str)
+{
+    unsigned long hash = 5381;
+    int c;
+ 
+    while (c = *str++)
+    {
+        hash = (((hash << 5) + hash) + c) % MAX_TABLE;
+    }
+ 
+    return hash % MAX_TABLE;
+}
+ 
+int find(const char *key, int *data)
+{
+    unsigned long h = hash(key);
+    int cnt = MAX_TABLE;
+ 
+    while (tb[h].key[0] != 0 && cnt--)
+    {
+        if (strcmp(tb[h].key, key) == 0)
+        {
+            *data = tb[h].data;
+            return 1;
+        }
+        h = (h + 1) % MAX_TABLE;
+    }
+    return 0;
+}
+ 
+int add(const char *key, int data)
+{
+    unsigned long h = hash(key);
+ 
+    while (tb[h].key[0] != 0)
+    {
+        if (strcmp(tb[h].key, key) == 0)
+        {
+            return 0;
+        }
+ 
+        h = (h + 1) % MAX_TABLE;
+    }
+    strcpy(tb[h].key, key);
+    tb[h].data = data;
+    return 1;
+}
+
+void newTemp(char* addr) 
+{
+    addr[0] = 't';
+    sprintf(&addr[1], "%d", cnt++);
+}
+
+void exit_translation(int exit_code)
+{
+    fclose(yyin); 
+    fclose(yyout);
+    exit(exit_code);
 }
 
 
-#line 87 "translator_yacc.tab.c" /* yacc.c:339  */
+#line 153 "translator_yacc.tab.c" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -115,11 +181,12 @@ extern int yydebug;
 # define YYTOKENTYPE
   enum yytokentype
   {
-    NUMBER = 258,
-    ID = 259,
-    FLOAT = 260,
-    INT = 261,
-    UMINUS = 262
+    INT_NUMBER = 258,
+    FLOAT_NUMBER = 259,
+    ID = 260,
+    FLOAT = 261,
+    INT = 262,
+    UMINUS = 263
   };
 #endif
 
@@ -128,14 +195,14 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 28 "translator_yacc.y" /* yacc.c:355  */
+#line 94 "translator_yacc.y" /* yacc.c:355  */
 
     int intVal;
     double floatVal;
-    string addr;
-    string lexeme;
+    char addr[20];
+    char lexeme[100];
 
-#line 139 "translator_yacc.tab.c" /* yacc.c:355  */
+#line 206 "translator_yacc.tab.c" /* yacc.c:355  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -152,7 +219,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 156 "translator_yacc.tab.c" /* yacc.c:358  */
+#line 223 "translator_yacc.tab.c" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -394,21 +461,21 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  3
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   31
+#define YYLAST   32
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  17
+#define YYNTOKENS  18
 /* YYNNTS -- Number of nonterminals.  */
 #define YYNNTS  7
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  19
+#define YYNRULES  20
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  33
+#define YYNSTATES  34
 
 /* YYTRANSLATE[YYX] -- Symbol number corresponding to YYX as returned
    by yylex, with out-of-bounds checking.  */
 #define YYUNDEFTOK  2
-#define YYMAXUTOK   262
+#define YYMAXUTOK   263
 
 #define YYTRANSLATE(YYX)                                                \
   ((unsigned int) (YYX) <= YYMAXUTOK ? yytranslate[YYX] : YYUNDEFTOK)
@@ -418,12 +485,12 @@ union yyalloc
 static const yytype_uint8 yytranslate[] =
 {
        0,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-      13,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+      14,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-      15,    16,     9,     7,     2,     8,     2,    10,     2,     2,
-       2,     2,     2,     2,     2,     2,     2,     2,     2,    12,
-       2,    14,     2,     2,     2,     2,     2,     2,     2,     2,
+      16,    17,    10,     8,     2,     9,     2,    11,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,    13,
+       2,    15,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
@@ -443,15 +510,16 @@ static const yytype_uint8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
-       5,     6,    11
+       5,     6,     7,    12
 };
 
 #if YYDEBUG
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    43,    43,    45,    46,    47,    49,    52,    56,    57,
-      58,    60,    64,    66,    68,    70,    72,    73,    75,    77
+       0,   110,   110,   112,   113,   114,   116,   120,   125,   126,
+     127,   129,   138,   139,   140,   141,   142,   143,   144,   145,
+     146
 };
 #endif
 
@@ -460,9 +528,10 @@ static const yytype_uint8 yyrline[] =
    First, the terminals, then, starting at YYNTOKENS, nonterminals.  */
 static const char *const yytname[] =
 {
-  "$end", "error", "$undefined", "NUMBER", "ID", "FLOAT", "INT", "'+'",
-  "'-'", "'*'", "'/'", "UMINUS", "';'", "'\\n'", "'='", "'('", "')'",
-  "$accept", "prog", "decls", "decl", "stmts", "stmt", "expr", YY_NULLPTR
+  "$end", "error", "$undefined", "INT_NUMBER", "FLOAT_NUMBER", "ID",
+  "FLOAT", "INT", "'+'", "'-'", "'*'", "'/'", "UMINUS", "';'", "'\\n'",
+  "'='", "'('", "')'", "$accept", "prog", "decls", "decl", "stmts", "stmt",
+  "expr", YY_NULLPTR
 };
 #endif
 
@@ -471,8 +540,8 @@ static const char *const yytname[] =
    (internal) symbol number NUM (which must be that of a token).  */
 static const yytype_uint16 yytoknum[] =
 {
-       0,   256,   257,   258,   259,   260,   261,    43,    45,    42,
-      47,   262,    59,    10,    61,    40,    41
+       0,   256,   257,   258,   259,   260,   261,   262,    43,    45,
+      42,    47,   263,    59,    10,    61,    40,    41
 };
 # endif
 
@@ -490,10 +559,10 @@ static const yytype_uint16 yytoknum[] =
      STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
-      -7,     3,    11,    -7,     0,     6,    -7,    17,    -2,    -7,
-      -7,    -7,    16,    -7,    19,    -3,    -7,    -7,    -7,    -3,
-      -3,    18,    -7,    -1,    -3,    -3,    -3,    -3,    -7,    13,
-      13,    -7,    -7
+      -7,     4,    11,    -7,     0,     6,    -7,    17,    -2,    -7,
+      -7,    -7,    16,    -7,    19,    -3,    -7,    -7,    -7,    -7,
+      -3,    -3,    18,    -7,    -1,    -3,    -3,    -3,    -3,    -7,
+      13,    13,    -7,    -7
 };
 
   /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -502,9 +571,9 @@ static const yytype_int8 yypact[] =
 static const yytype_uint8 yydefact[] =
 {
        5,     0,    10,     1,     0,     0,     4,     0,     2,     6,
-       7,     3,     0,     9,     0,     0,     8,    18,    19,     0,
-       0,    11,    17,     0,     0,     0,     0,     0,    16,    12,
-      13,    14,    15
+       7,     3,     0,     9,     0,     0,     8,    18,    19,    20,
+       0,     0,    11,    17,     0,     0,     0,     0,     0,    16,
+      12,    13,    14,    15
 };
 
   /* YYPGOTO[NTERM-NUM].  */
@@ -516,7 +585,7 @@ static const yytype_int8 yypgoto[] =
   /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-      -1,     1,     2,     7,     8,    14,    21
+      -1,     1,     2,     7,     8,    14,    22
 };
 
   /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -524,42 +593,44 @@ static const yytype_int8 yydefgoto[] =
      number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_uint8 yytable[] =
 {
-      17,    18,    12,     3,     9,    19,    24,    25,    26,    27,
-      10,    13,    20,    22,    23,    28,     4,     5,    29,    30,
-      31,    32,    26,    27,     6,    24,    25,    26,    27,    11,
-      15,    16
+      17,    18,    19,    12,     3,     9,    20,    25,    26,    27,
+      28,    10,    13,    21,    23,    24,    29,     4,     5,    30,
+      31,    32,    33,    27,    28,     6,    25,    26,    27,    28,
+      11,    15,    16
 };
 
 static const yytype_uint8 yycheck[] =
 {
-       3,     4,     4,     0,     4,     8,     7,     8,     9,    10,
-       4,    13,    15,    19,    20,    16,     5,     6,    24,    25,
-      26,    27,     9,    10,    13,     7,     8,     9,    10,    12,
-      14,    12
+       3,     4,     5,     5,     0,     5,     9,     8,     9,    10,
+      11,     5,    14,    16,    20,    21,    17,     6,     7,    25,
+      26,    27,    28,    10,    11,    14,     8,     9,    10,    11,
+      13,    15,    13
 };
 
   /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
      symbol of state STATE-NUM.  */
 static const yytype_uint8 yystos[] =
 {
-       0,    18,    19,     0,     5,     6,    13,    20,    21,     4,
-       4,    12,     4,    13,    22,    14,    12,     3,     4,     8,
-      15,    23,    23,    23,     7,     8,     9,    10,    16,    23,
-      23,    23,    23
+       0,    19,    20,     0,     6,     7,    14,    21,    22,     5,
+       5,    13,     5,    14,    23,    15,    13,     3,     4,     5,
+       9,    16,    24,    24,    24,     8,     9,    10,    11,    17,
+      24,    24,    24,    24
 };
 
   /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
 static const yytype_uint8 yyr1[] =
 {
-       0,    17,    18,    19,    19,    19,    20,    20,    21,    21,
-      21,    22,    23,    23,    23,    23,    23,    23,    23,    23
+       0,    18,    19,    20,    20,    20,    21,    21,    22,    22,
+      22,    23,    24,    24,    24,    24,    24,    24,    24,    24,
+      24
 };
 
   /* YYR2[YYN] -- Number of symbols on the right hand side of rule YYN.  */
 static const yytype_uint8 yyr2[] =
 {
        0,     2,     2,     3,     2,     0,     2,     2,     3,     2,
-       0,     3,     3,     3,     3,     3,     3,     2,     1,     1
+       0,     3,     3,     3,     3,     3,     3,     2,     1,     1,
+       1
 };
 
 
@@ -1236,87 +1307,99 @@ yyreduce:
   switch (yyn)
     {
         case 6:
-#line 49 "translator_yacc.y" /* yacc.c:1646  */
-    { auto it = sym_table.find( (yyvsp[0].lexeme) );
-                                  if (it == sym_table.end()) { printf("error!\n"); }
-                                  else { sym_table[(yyvsp[0].lexeme)] = T_FLOAT; } }
-#line 1244 "translator_yacc.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 7:
-#line 52 "translator_yacc.y" /* yacc.c:1646  */
-    { auto it = sym_table.find( (yyvsp[0].lexeme) );
-                                  if (it == sym_table.end()) { printf("error!\n"); }
-                                  else { sym_table[(yyvsp[0].lexeme)] = T_INT; } }
-#line 1252 "translator_yacc.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 11:
-#line 60 "translator_yacc.y" /* yacc.c:1646  */
-    { auto it = sym_table.find( (yyvsp[-2].lexeme) );
-                                  if (it == sym_table.end()) { printf("error!\n"); }
-                                  else fprintf(yyout, "%s = %s", ((yyvsp[-2].lexeme)).c_str(), ((yyvsp[0].addr)).c_str()); }
-#line 1260 "translator_yacc.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 12:
-#line 64 "translator_yacc.y" /* yacc.c:1646  */
-    { (yyval.addr) = newTemp();
-                                  fprintf(yyout, "%s = %s + %s", ((yyval.addr)).c_str(), ((yyvsp[-2].addr)).c_str(), ((yyvsp[0].addr)).c_str()); }
-#line 1267 "translator_yacc.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 13:
-#line 66 "translator_yacc.y" /* yacc.c:1646  */
-    { (yyval.addr) = newTemp();
-                                  fprintf(yyout, "%s = %s - %s", ((yyval.addr)).c_str(), ((yyvsp[-2].addr)).c_str(), ((yyvsp[0].addr)).c_str()); }
-#line 1274 "translator_yacc.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 14:
-#line 68 "translator_yacc.y" /* yacc.c:1646  */
-    { (yyval.addr) = newTemp();
-                                  fprintf(yyout, "%s = %s * %s", ((yyval.addr)).c_str(), ((yyvsp[-2].addr)).c_str(), ((yyvsp[0].addr)).c_str()); }
-#line 1281 "translator_yacc.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 15:
-#line 70 "translator_yacc.y" /* yacc.c:1646  */
-    { (yyval.addr) = newTemp();
-                                  fprintf(yyout, "%s = %s / %s", ((yyval.addr)).c_str(), ((yyvsp[-2].addr)).c_str(), ((yyvsp[0].addr)).c_str()); }
-#line 1288 "translator_yacc.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 16:
-#line 72 "translator_yacc.y" /* yacc.c:1646  */
-    { (yyval.addr) = (yyvsp[-1].addr); }
-#line 1294 "translator_yacc.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 17:
-#line 73 "translator_yacc.y" /* yacc.c:1646  */
-    { (yyval.addr) = newTemp();
-                                          fprintf(yyout, "%s = -%s", ((yyval.addr)).c_str(), ((yyvsp[0].addr)).c_str()); }
-#line 1301 "translator_yacc.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 18:
-#line 75 "translator_yacc.y" /* yacc.c:1646  */
-    { (yyval.floatVal) = floatVal; 
-                                  (yyval.addr) = to_string(floatVal); }
-#line 1308 "translator_yacc.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 19:
-#line 77 "translator_yacc.y" /* yacc.c:1646  */
-    { auto it = sym_table.find( (yyvsp[0].lexeme) );
-                                  if (it == sym_table.end()) { printf("error!\n"); }
-                                  else {(yyval.addr) = (yyvsp[0].lexeme); } }
+#line 116 "translator_yacc.y" /* yacc.c:1646  */
+    { if (!add((yyvsp[0].lexeme), T_FLOAT)) { 
+                                    fprintf(yyout, "Error!\n%s is already declared\n", (yyvsp[0].lexeme));
+                                    exit_translation(1);
+                                  }}
 #line 1316 "translator_yacc.tab.c" /* yacc.c:1646  */
     break;
 
+  case 7:
+#line 120 "translator_yacc.y" /* yacc.c:1646  */
+    { if (!add((yyvsp[0].lexeme), T_INT)) { 
+                                    fprintf(yyout, "Error!\n%s is already declared\n", (yyvsp[0].lexeme));
+                                    exit_translation(1);
+                                  }}
+#line 1325 "translator_yacc.tab.c" /* yacc.c:1646  */
+    break;
 
-#line 1320 "translator_yacc.tab.c" /* yacc.c:1646  */
+  case 11:
+#line 129 "translator_yacc.y" /* yacc.c:1646  */
+    { int type; 
+                                  if (!find((yyvsp[-2].lexeme), &type)) { 
+                                    fprintf(yyout, "Error!\n%s is unknown id\n", (yyvsp[-2].lexeme));
+                                    exit_translation(1);
+                                  }
+                                  else { 
+                                    fprintf(yyout, "%s = %s\n", (yyvsp[-2].lexeme), (yyvsp[0].addr)); 
+                                  }}
+#line 1338 "translator_yacc.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 12:
+#line 138 "translator_yacc.y" /* yacc.c:1646  */
+    { newTemp((yyval.addr)); fprintf(yyout, "%s = %s + %s\n", (yyval.addr), (yyvsp[-2].addr), (yyvsp[0].addr));  }
+#line 1344 "translator_yacc.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 13:
+#line 139 "translator_yacc.y" /* yacc.c:1646  */
+    { newTemp((yyval.addr)); fprintf(yyout, "%s = %s - %s\n", (yyval.addr), (yyvsp[-2].addr), (yyvsp[0].addr));  }
+#line 1350 "translator_yacc.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 14:
+#line 140 "translator_yacc.y" /* yacc.c:1646  */
+    { newTemp((yyval.addr)); fprintf(yyout, "%s = %s * %s\n", (yyval.addr), (yyvsp[-2].addr), (yyvsp[0].addr));  }
+#line 1356 "translator_yacc.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 15:
+#line 141 "translator_yacc.y" /* yacc.c:1646  */
+    { newTemp((yyval.addr)); fprintf(yyout, "%s = %s / %s\n", (yyval.addr), (yyvsp[-2].addr), (yyvsp[0].addr));  }
+#line 1362 "translator_yacc.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 16:
+#line 142 "translator_yacc.y" /* yacc.c:1646  */
+    { strcpy((yyval.addr), (yyvsp[-1].addr)); }
+#line 1368 "translator_yacc.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 17:
+#line 143 "translator_yacc.y" /* yacc.c:1646  */
+    { newTemp((yyval.addr)); fprintf(yyout, "%s = -%s\n", (yyval.addr), (yyvsp[0].addr)); }
+#line 1374 "translator_yacc.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 18:
+#line 144 "translator_yacc.y" /* yacc.c:1646  */
+    { sprintf((yyval.addr), "%d", (yyvsp[0].intVal)); }
+#line 1380 "translator_yacc.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 19:
+#line 145 "translator_yacc.y" /* yacc.c:1646  */
+    { sprintf((yyval.addr), "%E", (yyvsp[0].floatVal)); }
+#line 1386 "translator_yacc.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 20:
+#line 146 "translator_yacc.y" /* yacc.c:1646  */
+    { int type; 
+                                  if (!find((yyvsp[0].lexeme), &type)) { 
+                                    fprintf(yyout, "Error!\n%s is unknown id\n", (yyvsp[0].lexeme));
+                                    exit_translation(1);
+                                  }
+                                  else { 
+                                    strcpy((yyval.addr), (yyvsp[0].lexeme));
+                                  }}
+#line 1399 "translator_yacc.tab.c" /* yacc.c:1646  */
+    break;
+
+
+#line 1403 "translator_yacc.tab.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1544,23 +1627,23 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 81 "translator_yacc.y" /* yacc.c:1906  */
+#line 155 "translator_yacc.y" /* yacc.c:1906  */
 
 #include "lex.yy.c"
 int main(int argc, char* argv[]) 
 {
     // 프로그램 실행 방식 설명
     if(argc < 2) {
-        printf("Invalid command : specify a input file after program's name.\n translator \"input.txt\" \n ");
+        printf("Invalid command : specify a input file after program's name.\n ex) translator \"input.txt\" \n ");
         return 1;
     }
+    memset(tb, 0, sizeof(tb));
     yyin = fopen(argv[1], "r");
     yyout = fopen("output.txt", "w");
 
     yyparse();
 
-    fclose(yyin); 
-    fclose(yyout);
+    exit_translation(0);
     return 0;
 }
 
